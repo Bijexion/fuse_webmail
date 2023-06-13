@@ -156,7 +156,11 @@ size_t get_file_size(const char* path)
 
     struct memory_struct* mem = malloc(sizeof(struct memory_struct));
     CURL* curl = my_curl_init();
-    chunk_init(curl, mem);
+    mem->data = NULL;
+    mem->text_len_only = 1;
+    mem->len = 0;
+    mem->header_len = 0;
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, mem);
     size_t len = strlen(ROOT_URL) + directory_len + 2;
     char* new_url = malloc(len);
     snprintf(new_url, len, "%s%s", ROOT_URL, path);
@@ -164,9 +168,9 @@ size_t get_file_size(const char* path)
     curl_easy_setopt(curl, CURLOPT_URL, new_url);
     free(new_url);
 
-    size_t request_len = strlen("FETCH C RFC822.SIZE") + uid_len;
+    size_t request_len = strlen("FETCH C BODY[TEXT]") + uid_len;
     char* request = malloc(request_len + 1);
-    snprintf(request, request_len, "FETCH %d RFC822.SIZE", mail_uid);
+    snprintf(request, request_len, "FETCH %d BODY[TEXT]", mail_uid);
     request[request_len] = '\0';
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, request);
     CURLcode code = curl_easy_perform(curl);
@@ -175,7 +179,7 @@ size_t get_file_size(const char* path)
         res = 0;
     else
     {
-        char str_to_find[] = "FETCH (RFC822.SIZE ";
+        char str_to_find[] = "FETCH (BODY[TEXT] {";
         char* n = strstr(mem->data, str_to_find);
         if (!n) {
             res = 0;

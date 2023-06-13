@@ -103,9 +103,9 @@ static int partage_read(const char* path, char* buffer, size_t len, off_t offset
     snprintf(new_url, new_url_len, "%s%s", ROOT_URL, path);
     curl_easy_setopt(curl, CURLOPT_URL, new_url);
 
-    size_t request_len = strlen("UID FETCH %d BODY[]") + 11;
+    size_t request_len = strlen("UID FETCH %d BODY[TEXT]") + 11;
     char* request = malloc(request_len);
-    snprintf(request, request_len, "FETCH %d BODY[]", seq_num);
+    snprintf(request, request_len, "FETCH %d BODY[TEXT]", seq_num);
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, request);
 
     CURLcode code = curl_easy_perform(curl);

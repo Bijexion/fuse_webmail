@@ -6,6 +6,7 @@ void chunk_init(CURL* curl, struct memory_struct* mem)
     mem->data = NULL;
     mem->len = 0;
     mem->header_len = 0;
+    mem->text_len_only = 0;
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, mem);
 }
 
@@ -49,10 +50,10 @@ size_t write_memory_call_back(void* content, size_t size, size_t nmemb, void* us
     struct memory_struct *mem = (struct memory_struct *)userdata;
 
     int body_length = extract_length(content);
-    if (body_length >= 0) {
+    if (body_length >= 0 && !mem->text_len_only) {
         {
             char* start = strstr(content, "}") + 1;
-            if (strcmp(start, "\r\nompleted\r") == 0)
+            if (strstr(start + 2, "\r")[1] != '\n')
                 return total_size;
         }
         mem->header_len = total_size;

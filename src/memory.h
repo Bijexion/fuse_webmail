@@ -7,6 +7,7 @@ struct memory_struct {
     char *data;
     size_t len;
     size_t header_len;
+    int text_len_only;
 };
 
 void chunk_init(CURL* curl, struct memory_struct* mem);

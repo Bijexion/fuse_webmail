@@ -62,15 +62,35 @@ int parse_size(const char* answer, size_t len)
     return res;
 }
 
-/*
-int list_number_sud_dir(const char* respond)
+static int get_header_attr(const char* answer, char* sub, char* str_to_search)
 {
-    char* cur = respond;
-    int res = 0;
-    while (*cur)
-    {
-        if (*cur == '\n')
-            res++;
-    }
+    char* start = strstr(answer, str_to_search);
+    if (!start)
+        return -1;
+    start += strlen(str_to_search);
+
+    char* end = strstr(start, "\n");
+    size_t len = end - start;
+    sub = malloc(len);
+    strncpy(sub, start, len);
+    return len;
+}
+
+#define GET_HEADER_ATTR(res, str_to_search) \
+    a1 = get_header_attr(answer, res, str_to_search); \
+    if (a1 < 0)                                        \
+        return -1;                                            \
+    res += a1;
+
+int parse_header(const char* answer, char* subject, char* sender, char* receivers, char* CC)
+{
+    size_t res = 0;
+    int a1;
+
+    GET_HEADER_ATTR(subject, "Subject: ")
+    GET_HEADER_ATTR(sender, "From: ")
+    GET_HEADER_ATTR(receivers, "To: ")
+    GET_HEADER_ATTR(CC, "CC: ")
+
     return res;
-}*/
+}
