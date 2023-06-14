@@ -168,9 +168,9 @@ size_t get_file_size(const char* path)
     curl_easy_setopt(curl, CURLOPT_URL, new_url);
     free(new_url);
 
-    size_t request_len = strlen("FETCH C BODY[TEXT]") + uid_len;
+    size_t request_len = strlen("FETCH C BODY.PEEK[TEXT]") + uid_len;
     char* request = malloc(request_len + 1);
-    snprintf(request, request_len, "FETCH %d BODY[TEXT]", mail_uid);
+    snprintf(request, request_len, "FETCH %d BODY.PEEK[TEXT]", mail_uid);
     request[request_len] = '\0';
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, request);
     CURLcode code = curl_easy_perform(curl);
