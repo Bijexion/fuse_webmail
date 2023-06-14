@@ -28,6 +28,48 @@ noreturn void report(const char* msg)
 int file_log;
 char userpwd[64];
 
+#define GET_HEADER_ATTR(target, raw)  if ((attr_len = get_header_attr(mem.data, mem.len, &target, raw)) > 0)  \
+{  \
+if (buffer)  memcpy(buffer + res + offset, target, attr_len);  \
+free(target);  \
+res += attr_len;  \
+}
+
+static int read_header(const char* url, int seq_num, char* buffer, off_t offset)
+{
+    struct memory_struct mem;
+
+    CURL* curl = my_curl_init();
+    chunk_init(curl, &mem);
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+
+    size_t request_len = strlen("UID FETCH %d BODY[HEADER]") + 11;
+    char* request = malloc(request_len);
+    snprintf(request, request_len, "FETCH %d BODY[HEADER]", seq_num);
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, request);
+    curl_easy_perform(curl);
+
+    int res = 0;
+    char* receivers, *date, *sender, *subject, *Cc;
+    int attr_len;
+    GET_HEADER_ATTR(date, "Date: ")
+    GET_HEADER_ATTR(receivers, "To: ")
+
+    if ((attr_len = get_header_attr(mem.data, mem.len, &Cc, "Cc: ")) > 0)
+    {
+        if (buffer)
+            memcpy(buffer + res + offset, Cc, attr_len);
+        free(Cc);
+        res += attr_len;
+    }
+
+    GET_HEADER_ATTR(sender, "From: ")
+    GET_HEADER_ATTR(subject, "Subject: ")
+    chunk_free(&mem);
+    curl_easy_cleanup(curl);
+    return res;
+}
+
 static int partage_getattr(const char* path, struct stat* buf, struct fuse_file_info* fi)
 {
     /*
@@ -50,10 +92,17 @@ static int partage_getattr(const char* path, struct stat* buf, struct fuse_file_
             buf->st_nlink = 1;
             buf->st_mode = S_IFREG | 0444;
 
-            buf->st_size = (long)get_file_size(path);
-            char lll[11];
-            snprintf(lll, 11, "%lu\n", buf->st_size);
-            write(file_log, lll, 11);
+
+            int seq_num;
+            char dir[32];
+            if (parse_file_path(path, &seq_num, dir) < 0)
+                return -ENOENT;
+
+            size_t new_url_len = strlen(ROOT_URL) + strlen(dir) + 2;
+            char* new_url = malloc(new_url_len);
+            snprintf(new_url, new_url_len, "%s%s", ROOT_URL, path);
+
+            buf->st_size = (long)get_file_size(path) + read_header(new_url, seq_num, NULL, 0);
             break;
         case ft_root:
             buf->st_mode = S_IFDIR |0755;
@@ -94,13 +143,16 @@ static int partage_read(const char* path, char* buffer, size_t len, off_t offset
     if (parse_file_path(path, &seq_num, dir) < 0)
         return -ENOENT;
 
+    size_t new_url_len = strlen(ROOT_URL) + strlen(dir) + 2;
+    char* new_url = malloc(new_url_len);
+    snprintf(new_url, new_url_len, "%s%s", ROOT_URL, path);
+
+    int header_len = read_header(new_url, seq_num, buffer, offset);
+
     CURL* curl = my_curl_init();
     struct memory_struct mem;
     chunk_init(curl, &mem);
     int res;
-    size_t new_url_len = strlen(ROOT_URL) + strlen(dir) + 2;
-    char* new_url = malloc(new_url_len);
-    snprintf(new_url, new_url_len, "%s%s", ROOT_URL, path);
     curl_easy_setopt(curl, CURLOPT_URL, new_url);
 
     size_t request_len = strlen("UID FETCH %d BODY[TEXT]") + 11;
@@ -121,8 +173,8 @@ static int partage_read(const char* path, char* buffer, size_t len, off_t offset
     }
 
     size_t bytes_to_read = (len > mem.len - offset) ? mem.len - offset : len;
-    memcpy(buffer, mem.data + offset + mem.header_len, bytes_to_read);
-    res = (int)bytes_to_read;
+    memcpy(buffer + header_len, mem.data + offset + mem.header_len, bytes_to_read);
+    res = (int)bytes_to_read + header_len;
 
 end:
     chunk_free(&mem);
@@ -211,18 +263,6 @@ static int partage_release(const char* path, struct fuse_file_info* fi)
     return (type_of_file(path, NULL) != ft_regular) ? -ENOENT : 0;
 }
 
-static int partage_write(const char* path, const char*buf, size_t len, off_t offset, struct fuse_file_info* fi)
-{
-    if (type_of_file(path, NULL) != ft_regular)
-        return -ENOENT;
-
-    int seq_num;
-    char dir[32];
-    if (parse_file_path(path, &seq_num, dir) < 0)
-        return -ENOENT;
-
-}
-
 struct fuse_operations partage_operation = {
         .getattr = partage_getattr,
         .access = partage_access,
@@ -231,7 +271,6 @@ struct fuse_operations partage_operation = {
         .open = partage_open,
         .release = partage_release,
         //.opendir = partage_opendir,
-        .write = partage_write,
 };/*
 
 int copy_volume_info()

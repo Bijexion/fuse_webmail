@@ -62,35 +62,35 @@ int parse_size(const char* answer, size_t len)
     return res;
 }
 
-static int get_header_attr(const char* answer, char* sub, char* str_to_search)
+static char* my_strnstr(const char* haystack, const char* needle, int n)
+{
+    size_t needle_len = strlen(needle);
+    for (int i = 0; i < n - needle_len && haystack[i] != 0; ++i)
+    {
+        for (int j = 0; j < needle_len; ++j) {
+            if (haystack[i + j] != needle[j])
+                break;
+            if (j == needle_len - 1)
+                return haystack + i;
+        }
+    }
+    return NULL;
+}
+
+int get_header_attr(const char* answer, size_t len_answer, char** sub, char* str_to_search)
 {
     char* start = strstr(answer, str_to_search);
     if (!start)
         return -1;
-    start += strlen(str_to_search);
 
-    char* end = strstr(start, "\n");
+    char* end = my_strnstr(start, "\r\n", len_answer);
+    if (!end)
+        end = answer + len_answer - 1;
+    else
+        end+=2;
     size_t len = end - start;
-    sub = malloc(len);
-    strncpy(sub, start, len);
+    *sub = malloc(len + 1);
+    strncpy(*sub, start, len);
+    (*sub)[len] = 0;
     return len;
-}
-
-#define GET_HEADER_ATTR(res, str_to_search) \
-    a1 = get_header_attr(answer, res, str_to_search); \
-    if (a1 < 0)                                        \
-        return -1;                                            \
-    res += a1;
-
-int parse_header(const char* answer, char* subject, char* sender, char* receivers, char* CC)
-{
-    size_t res = 0;
-    int a1;
-
-    GET_HEADER_ATTR(subject, "Subject: ")
-    GET_HEADER_ATTR(sender, "From: ")
-    GET_HEADER_ATTR(receivers, "To: ")
-    GET_HEADER_ATTR(CC, "CC: ")
-
-    return res;
 }
