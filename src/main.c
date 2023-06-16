@@ -22,10 +22,6 @@ noreturn void report(const char* msg)
     exit(EXIT_FAILURE);
 }
 
-#define NCHECK(op) do { if ((op) == NULL) report(#op); } while(0)
-#define CHECK(op) do { if ((op) < 0) report(#op); } while(0)
-
-int file_log;
 char userpwd[64];
 
 #define GET_HEADER_ATTR(target, raw)  if ((attr_len = get_header_attr(mem.data, mem.len, &target, raw)) > 0)  \
@@ -67,6 +63,7 @@ static int read_header(const char* url, int seq_num, char* buffer, off_t offset)
     GET_HEADER_ATTR(subject, "Subject: ")
     chunk_free(&mem);
     curl_easy_cleanup(curl);
+    free(request);
     return res;
 }
 
@@ -103,14 +100,13 @@ static int partage_getattr(const char* path, struct stat* buf, struct fuse_file_
             snprintf(new_url, new_url_len, "%s%s", ROOT_URL, path);
 
             buf->st_size = (long)get_file_size(path) + read_header(new_url, seq_num, NULL, 0);
+            free(new_url);
             break;
         case ft_root:
             buf->st_mode = S_IFDIR |0755;
             buf->st_nlink = 1 + num;
             break;
         case ft_unexistant:
-            write(file_log, path, strlen(path));
-            write(file_log, "\n", 1);
             return -ENOENT;
     }
 
@@ -180,7 +176,7 @@ end:
     chunk_free(&mem);
     free(new_url);
     free(request);
-
+    curl_easy_cleanup(curl);
     return res;
 }
 
@@ -245,12 +241,6 @@ static int partage_readdir(const char *path, void *buffer, fuse_fill_dir_t fille
     return res;
 }
 
-static int partage_opendir(const char* path, struct fuse_file_info* fi)
-{
-    (void)fi;
-    return type_of_file(path, NULL) == ft_directory ? 0 : -ENOENT;
-}
-
 static int partage_open(const char* path, struct fuse_file_info* fi)
 {
     (void)fi;
@@ -270,7 +260,6 @@ struct fuse_operations partage_operation = {
         .readdir = partage_readdir,
         .open = partage_open,
         .release = partage_release,
-        //.opendir = partage_opendir,
 };/*
 
 int copy_volume_info()
@@ -293,9 +282,6 @@ int main(int argc, char* argv[])
         fprintf(stderr, "%s\n", "wrong user/pwd");
         exit(EXIT_FAILURE);
     }
-    remove("log.txt");
-    file_log = open("log.txt", O_CREAT | O_RDWR);
     int out = fuse_main(argc, argv, &partage_operation, NULL);
-    close(file_log);
     return out;
 }

@@ -38,9 +38,6 @@ int search_for_slash_i(const char* path, int i)
 
 bool is_reg_file(const char* path)
 {
-    if (strcmp(path, "/autorun.inf") == 0 || strcmp(path, "/.xdg-volume-info") == 0 || strcmp(path, "/.Trash-1002") == 0)
-        return true;
-
     int mail_uid;
     char directory[32];
     if (parse_file_path(path, &mail_uid, directory) < 0)

@@ -10,12 +10,6 @@ void chunk_init(CURL* curl, struct memory_struct* mem)
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, mem);
 }
 
-void chunk_reset(CURL* curl, struct memory_struct* mem)
-{
-    free(mem->data);
-    chunk_init(curl, mem);
-}
-
 void chunk_free(struct memory_struct* mem)
 {
     free(mem->data);
@@ -40,7 +34,9 @@ int extract_length(const char* fetched)
     }
     char* mail_len = malloc(len + 1);
     snprintf(mail_len, len + 1, "%s", start);
-    return atoi(mail_len);
+    int res = atoi(mail_len);
+    free(mail_len);
+    return res;
 }
 
 size_t write_memory_call_back(void* content, size_t size, size_t nmemb, void* userdata)

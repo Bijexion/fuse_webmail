@@ -44,24 +44,6 @@ int parse_list(char** line, char* res, const char* end)
     return 0;
 }
 
-int parse_size(const char* answer, size_t len)
-{
-    if (answer[len - 1] != ')')
-        return -1;
-    char str_to_find[] = "FETCH (RFC822.SIZE ";
-    char* n = strstr(answer, str_to_find);
-    if (!n) {
-        return -1;
-    }
-    n += strlen(str_to_find);
-
-    char* str = malloc(answer + len - n);
-    snprintf(str, answer + len - n, "%s", n);
-    int res = atoi(str);
-    free(str);
-    return res;
-}
-
 static char* my_strnstr(const char* haystack, const char* needle, int n)
 {
     size_t needle_len = strlen(needle);

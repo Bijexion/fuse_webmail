@@ -11,7 +11,6 @@ struct memory_struct {
 };
 
 void chunk_init(CURL* curl, struct memory_struct* mem);
-void chunk_reset(CURL* curl, struct memory_struct* mem);
 void chunk_free(struct memory_struct* mem);
 
 size_t write_memory_call_back(void* content, size_t size, size_t nmemb, void* userdata);
