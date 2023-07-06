@@ -1,0 +1,27 @@
+   unique: 656, success, outsize: 144
+unique: 658, opcode: LOOKUP (1), nodeid: 2, insize: 47, pid: 6677
+LOOKUP /Drafts/mail#1
+getattr[NULL] /Drafts/mail#1
+   NODEID: 8
+   unique: 658, success, outsize: 144
+unique: 660, opcode: OPEN (14), nodeid: 8, insize: 48, pid: 6677
+open flags: 0x8000 /Drafts/mail#1
+   open[0] flags: 0x8000 /Drafts/mail#1
+   unique: 660, success, outsize: 32
+unique: 662, opcode: READ (15), nodeid: 8, insize: 80, pid: 6677
+read[0] 4096 bytes from 0 flags: 0x8000
+   read[0] 458 bytes from 0
+   unique: 662, success, outsize: 474
+unique: 664, opcode: GETATTR (3), nodeid: 8, insize: 56, pid: 6677
+getattr[0] /Drafts/mail#1
+   unique: 664, success, outsize: 120
+unique: 666, opcode: READ (15), nodeid: 8, insize: 80, pid: 6677
+read[0] 4096 bytes from 0 flags: 0x8000
+   read[0] 458 bytes from 0
+   unique: 666, success, outsize: 474
+unique: 668, opcode: FLUSH (25), nodeid: 8, insize: 64, pid: 6677
+   unique: 668, error: -38 (Function not implemented), outsize: 16
+unique: 670, opcode: RELEASE (18), nodeid: 8, insize: 64, pid: 0
+release[0] flags: 0x8000
+   unique: 670, success, outsize: 16
+

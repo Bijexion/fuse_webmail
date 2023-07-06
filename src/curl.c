@@ -2,10 +2,12 @@
 #include <termios.h>
 #include "memory.h"
 
+char userpassword[64];
+
 CURL* my_curl_init()
 {
     CURL* curl = curl_easy_init();
-    curl_easy_setopt(curl, CURLOPT_USERPWD, userpwd);
+    curl_easy_setopt(curl, CURLOPT_USERPWD, userpassword);
     curl_easy_setopt(curl, CURLOPT_URL, ROOT_URL);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_memory_call_back);
     return curl;
@@ -28,7 +30,7 @@ void parse_userpwd()
 
     tcsetattr(fileno(stdin), TCSANOW, &term_orig);
 
-    snprintf(userpwd, 64, "%s:%s", USER_NAME, pwd);
+    snprintf(userpassword, 64, "%s:%s", USER_NAME, pwd);
 }
 
 int check_userpwd()

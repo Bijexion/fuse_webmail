@@ -22,8 +22,6 @@ noreturn void report(const char* msg)
     exit(EXIT_FAILURE);
 }
 
-char userpwd[64];
-
 #define GET_HEADER_ATTR(target, raw)  if ((attr_len = get_header_attr(mem.data, mem.len, &target, raw)) > 0)  \
 {  \
 if (buffer)  memcpy(buffer + res + offset, target, attr_len);  \
@@ -75,6 +73,8 @@ static int partage_getattr(const char* path, struct stat* buf, struct fuse_file_
      * /.xdg-volume-info
      * /autorun.inf
      */
+    if (!strcmp(path, "/.xdg-volume-info") || !strcmp(path, "/.Trash-1002") || !strcmp(path, "/autorun.inf"))
+        return 0;
     (void)fi;
 
     buf->st_size = 4096;
@@ -260,20 +260,13 @@ struct fuse_operations partage_operation = {
         .readdir = partage_readdir,
         .open = partage_open,
         .release = partage_release,
-};/*
-
-int copy_volume_info()
-{
-    int fd = open("mount/.xdg-volume-info", O_CREAT | O_RDWR);
-
-    write(fd, )
-}*/
+};
 
 int main(int argc, char* argv[])
 {
     if (argc != 3)
     {
-        fprintf(stderr, "usage : %s -f <mountpoint>\n", argv[0]);
+        fprintf(stderr, "usage : %s -d <mountpoint>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
     parse_userpwd();
